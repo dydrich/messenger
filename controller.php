@@ -34,7 +34,9 @@ switch ($action){
 		$msg = new Message(0, $th->getTid(), $sender, $th->getTid(), new MySQLDataLoader($db), null);
 		$msg->setText($text);
 		$msg->send();
-		$msg->read();
+		if($th->getType() != Thread::CONVERSATION) {
+			$msg->read();
+		}
 		$th->addMessage($msg);
 		$_SESSION['threads'][$th->getTid()] = $th;
 		krsort($_SESSION['threads']);

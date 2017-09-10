@@ -19,7 +19,7 @@ else if ($_POST['upd'] == "th") {
 	 */
 	$last_msg = $_POST['lmsg'];
 	$response = array();
-	$sel_new_th = "SELECT rb_com_threads.* FROM rb_com_threads, rb_com_utenti_thread WHERE tid = thread AND tid > {$_POST['tid']} AND utente = {$_SESSION['__user__']->getUniqID()} ORDER BY tid ASC";
+	$sel_new_th = "SELECT rb_mess_threads.* FROM rb_mess_threads, rb_mess_utenti_thread WHERE tid = thread AND tid > {$_POST['tid']} AND utente = {$_SESSION['__user__']->getUniqID()} ORDER BY tid ASC";
 	$res_th = $db->executeQuery($sel_new_th);
 	if ($res_th->num_rows < 1){
 	}
@@ -52,7 +52,7 @@ else if ($_POST['upd'] == "th") {
 	if (isset($tids) && count($tids) > 0){
 		$ins = implode(",", $tids);
 	}
-	$sel_new_msgs = "SELECT rb_com_messages.* FROM rb_com_messages, rb_com_threads, rb_com_utenti_thread WHERE rb_com_threads.tid = rb_com_messages.tid AND rb_com_threads.tid = thread AND utente = {$_SESSION['__user__']->getUniqID()} AND mid > {$last_msg}";
+	$sel_new_msgs = "SELECT rb_mess_messages.* FROM rb_mess_messages, rb_mess_threads, rb_mess_utenti_thread WHERE rb_mess_threads.tid = rb_mess_messages.tid AND rb_mess_threads.tid = thread AND utente = {$_SESSION['__user__']->getUniqID()} AND mid > {$last_msg}";
 	//echo $sel_new_msgs;
 	if ($ins != ""){
 		$sel_new_msgs .= " AND rb_com_messages.tid NOT IN ({$ins})";

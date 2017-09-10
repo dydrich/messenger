@@ -30,6 +30,6 @@ switch ($_SESSION['__mod_area__']) {
             </a>
         </div>
 	</div>
-	<div class="nav_div" style="float: right; margin-right: 50px; position: relative; top: 20px; text-align: right">Area comunicazioni::<span id="navlabel"><?php echo $lb ?></span></div>
+	<div class="nav_div" style="float: right; margin-right: 50px; position: relative; top: 20px; text-align: right">Area messaggistica::<span id="navlabel"><?php echo $lb ?></span></div>
 	<div class="nav_div" style="clear: both"></div>
 </nav>

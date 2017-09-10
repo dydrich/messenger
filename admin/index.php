@@ -17,6 +17,6 @@ $_SESSION['__path_to_root__'] = "../../../";
 $_SESSION['__path_to_mod_home__'] = "../../";
 
 $navigation_label = "gestione moduli";
-$drawer_label = "Modulo: comunicazioni";
+$drawer_label = "Modulo: messaggistica";
 
 include "index.html.php";

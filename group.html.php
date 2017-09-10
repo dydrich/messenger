@@ -18,7 +18,7 @@
         var _user_group = "";
         var owner = <?php echo $thread->getOwner()->getUniqID() ?>;
         var me = <?php echo $_SESSION['__user__']->getUniqID(); ?>;
-        var blocked = <?php echo $thread->isBlocked() ?>;
+        var blocked = <?php if($thread->isBlocked()) echo "1"; else echo 0; ?>;
         $(function(){
             load_jalert();
             setOverlayEvent();
@@ -151,7 +151,7 @@
     <div id="left_col">
         <div class="rb_button" style="top: -5px; margin-left: 20px" title="Torna indietro">
             <a href="thread.php">
-                <i class="fa fa-reply" style="color: black; font-size: 1.6em; padding: 10px 0 0 12px"></i>
+                <i class="fa fa-undo" style="color: black; font-size: 1.6em; padding: 10px 0 0 10px"></i>
             </a>
         </div>
         <?php if ($_REQUEST['tid'] == 0): ?>

@@ -8,7 +8,7 @@
  */
 require_once "../../../lib/start.php";
 require_once "../../../lib/RBUtilities.php";
-require_once "../../../modules/communication/lib/Thread.php";
+require_once "../../../modules/messenger/lib/Thread.php";
 
 check_session();
 check_permission(ADM_PERM);

@@ -163,13 +163,13 @@ class Message {
 
     public function send(){
     	$text = $this->text;
-	    $this->ID = $this->datasource->executeUpdate("INSERT INTO rb_com_messages (tid, sender, target, text) VALUES ({$this->getThread()}, {$this->from->getUniqID()}, {$this->to}, '{$text}')");
+	    $this->ID = $this->datasource->executeUpdate("INSERT INTO rb_mess_messages (tid, sender, target, text) VALUES ({$this->getThread()}, {$this->from->getUniqID()}, {$this->to}, '{$text}')");
 	    $this->send_timestamp = date("Y-m-d H:i:s");
     }
     
     public function read(){
     	$this->read_timestamp = date("Y-m-d H:i:s");
-    	$this->datasource->executeUpdate("UPDATE rb_com_messages SET read_timestamp = NOW() WHERE tid = {$this->getThread()} AND mid = {$this->getID()}");
+    	$this->datasource->executeUpdate("UPDATE rb_mess_messages SET read_timestamp = NOW() WHERE tid = {$this->getThread()} AND mid = {$this->getID()}");
     }
     
     public function delete($reason){
@@ -186,7 +186,7 @@ class Message {
     
     public function report($reason) {
     	$this->state = $reason;
-	    $this->datasource->executeUpdate("UPDATE rb_com_messages SET state = {$reason} WHERE tid = {$this->getThread()} AND mid = {$this->getID()}");
+	    $this->datasource->executeUpdate("UPDATE rb_mess_messages SET state = {$reason} WHERE tid = {$this->getThread()} AND mid = {$this->getID()}");
     }
     
     public function restoreDatasource($ds) {

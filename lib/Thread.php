@@ -125,7 +125,7 @@ class Thread {
 		    $this->loadUsers();
 	    }
 	    else {
-		   $this->users = $users;
+		   $this->loadUsers($users);
 	    }
         $this->last_message = null;
 	    $this->systemThread = 0;
@@ -153,7 +153,7 @@ class Thread {
 	 * load permission from rb_system_thread
 	 */
 	private function loadPermission() {
-		$perms = $this->datasource->executeQuery("SELECT * FROM rb_com_system_threads WHERE tid = {$this->tid}");
+		$perms = $this->datasource->executeQuery("SELECT * FROM rb_mess_system_threads WHERE tid = {$this->tid}");
 		if ($perms[0]['classe'] != "") {
 			$this->perms['class'] = $perms[0]['classe'];
 		}
@@ -178,19 +178,29 @@ class Thread {
 	    return array($active, $blocked);
     }
 
-	public function loadUsers() {
-		$res = $this->datasource->executeQuery("SELECT utente, last_access FROM rb_com_utenti_thread WHERE thread = {$this->tid}");
-		if ($res) {
-			$rb = \RBUtilities::getInstance($this->datasource->getSource());
-			foreach ($res as $row) {
-				$this->users[$row['utente']] = $rb->loadUserFromUniqID($row['utente']);
-				$this->lastAccesses[$row['utente']] = $row['last_access'];
+	public function loadUsers($users = null) {
+    	if ($users == null) {
+			$res = $this->datasource->executeQuery("SELECT utente, last_access FROM rb_mess_utenti_thread WHERE thread = {$this->tid}");
+			if ($res) {
+				$rb = \RBUtilities::getInstance($this->datasource->getSource());
+				foreach ($res as $row) {
+					$this->users[$row['utente']] = $rb->loadUserFromUniqID($row['utente']);
+					$this->lastAccesses[$row['utente']] = $row['last_access'];
+				}
 			}
 		}
+		else {
+			$rb = \RBUtilities::getInstance($this->datasource->getSource());
+			foreach ($users as $uid) {
+				$this->users[$uid] = $rb->loadUserFromUniqID($uid);
+				$this->lastAccesses[$uid] = '';
+			}
+		}
+
 	}
 
 	private function checkActivity() {
-		$active = $this->datasource->executeCount("SELECT active FROM rb_com_threads WHERE tid = {$this->tid}");
+		$active = $this->datasource->executeCount("SELECT active FROM rb_mess_threads WHERE tid = {$this->tid}");
 		if ($active != null) {
 			$this->activate($active);
 		}
@@ -201,7 +211,7 @@ class Thread {
 	}
 
 	private function checkBlock() {
-		$block = $this->datasource->executeCount("SELECT blocked FROM rb_com_threads WHERE tid = {$this->tid}");
+		$block = $this->datasource->executeCount("SELECT blocked FROM rb_mess_threads WHERE tid = {$this->tid}");
 		if ($block != null) {
 			$this->setBlock($block);
 		}
@@ -212,7 +222,7 @@ class Thread {
 	}
 
 	private function loadAdmins() {
-		$admins = $this->datasource->executeQuery("SELECT utente FROM rb_com_utenti_thread WHERE thread = {$this->tid} AND admin = 1");
+		$admins = $this->datasource->executeQuery("SELECT utente FROM rb_mess_utenti_thread WHERE thread = {$this->tid} AND admin = 1");
 		if ($admins) {
 			$rb = \RBUtilities::getInstance($this->datasource->getSource());
 			foreach ($admins as $admin) {
@@ -223,7 +233,7 @@ class Thread {
     
     protected function loadMessages(){
 	    $rb = \RBUtilities::getInstance($this->datasource->getSource());
-	    $messages = $this->datasource->executeQuery("SELECT * FROM rb_com_messages WHERE tid = {$this->tid} ORDER BY mid DESC");
+	    $messages = $this->datasource->executeQuery("SELECT * FROM rb_mess_messages WHERE tid = {$this->tid} ORDER BY mid DESC");
 	    if ($messages != null){
 		    foreach ($messages as $message){
 			    $sender = $rb->loadUserFromUniqID($message['sender']);
@@ -278,13 +288,13 @@ class Thread {
     	$this->messages[$msg->getID()] = $msg;
     	$this->last_message = $msg;
     	krsort($this->messages);
-    	$this->datasource->executeUpdate("UPDATE rb_com_threads SET last_message = {$msg->getID()} WHERE tid = {$this->tid}");
+    	$this->datasource->executeUpdate("UPDATE rb_mess_threads SET last_message = {$msg->getID()} WHERE tid = {$this->tid}");
     }
     
     public function readAll($user){
 	    $ts = null;
 	    if ($this->type == self::CONVERSATION) {
-	        $this->datasource->executeUpdate("UPDATE rb_com_messages SET read_timestamp = NOW() WHERE read_timestamp IS NULL AND tid = {$this->tid} AND sender != {$user->getUniqID()}");
+	        $this->datasource->executeUpdate("UPDATE rb_mess_messages SET read_timestamp = NOW() WHERE read_timestamp IS NULL AND tid = {$this->tid} AND sender != {$user->getUniqID()}");
 	        foreach ($this->messages as $msg){
 	            if (($msg->getFrom()->getUniqID() != $user->getUniqID()) && ($msg->getReadTimestamp() == "" || $msg->getReadTimestamp() == null)){
 	                $ts = date("Y-m-d H:i:s");
@@ -320,7 +330,7 @@ class Thread {
 		if (count($this->messages) > 0) {
 			$last_message = $this->getLastMessage()->getID();
 		}
-		$new_messages = $this->datasource->executeQuery("SELECT * FROM rb_com_messages WHERE tid = {$this->getTid()} AND sender <> {$_SESSION['__user__']->getUniqID()} AND mid > {$last_message} ORDER BY send_timestamp ASC");
+		$new_messages = $this->datasource->executeQuery("SELECT * FROM rb_mess_messages WHERE tid = {$this->getTid()} AND sender <> {$_SESSION['__user__']->getUniqID()} AND mid > {$last_message} ORDER BY send_timestamp ASC");
 		if ($new_messages){
 			foreach ($new_messages as $msg){
 				$rb = \RBUtilities::getInstance($this->datasource->getSource());
@@ -362,7 +372,7 @@ class Thread {
 		if ($unread != null){
 			if ($this->type == self::CONVERSATION) {
 				foreach ($unread as $k => $row){
-					$reads = $this->datasource->executeCount("SELECT read_timestamp FROM rb_com_messages WHERE mid = {$row->getID()}");
+					$reads = $this->datasource->executeCount("SELECT read_timestamp FROM rb_mess_messages WHERE mid = {$row->getID()}");
 					if ($reads != null && $reads != false){
 						list($rdate, $rtime) = explode(" ", $reads);
 						$date = "oggi alle ".substr($rtime, 0, 5);
@@ -386,11 +396,14 @@ class Thread {
 		if ($this->owner != null) {
 			$ownerID = $this->owner->getUniqID();
 		}
-		$this->tid = $this->datasource->executeUpdate("INSERT INTO rb_com_threads (owner, last_message, system, name, type, creation) VALUES (".field_null($ownerID, false).", NULL, {$this->systemThread}, ".field_null($this->name, true).", '{$this->type}', '{$this->creationDate}')");
+		$this->tid = $this->datasource->executeUpdate("INSERT INTO rb_mess_threads (owner, last_message, system, name, type, creation) VALUES (".field_null($ownerID, false).", NULL, {$this->systemThread}, ".field_null($this->name, true).", '{$this->type}', '{$this->creationDate}')");
 		// set block
 		if (count($this->users) > 0) {
-			foreach ($this->users as $k => $user) {
-				$this->datasource->executeUpdate("INSERT INTO rb_com_utenti_thread (thread, utente) VALUES ({$this->tid}, {$k})");
+			foreach ($this->users as $user) {
+				if ($user instanceof UserBean) {
+					$user = $user->getUniqID();
+				}
+				$this->datasource->executeUpdate("INSERT INTO rb_mess_utenti_thread (thread, utente) VALUES ({$this->tid}, {$user})");
 			}
 		}
 	}
@@ -398,18 +411,18 @@ class Thread {
 	public function deleteAll() {
 		$this->deleteMessages();
 		$this->deleteUsers();
-		$this->datasource->executeUpdate("DELETE FROM rb_com_system_threads WHERE tid = {$this->tid}");
-		$this->datasource->executeUpdate("DELETE FROM rb_com_threads WHERE tid = {$this->tid}");
+		$this->datasource->executeUpdate("DELETE FROM rb_mess_system_threads WHERE tid = {$this->tid}");
+		$this->datasource->executeUpdate("DELETE FROM rb_mess_threads WHERE tid = {$this->tid}");
 	}
 
 	private function deleteMessages() {
 		$this->messages = [];
-		$this->datasource->executeUpdate("DELETE FROM rb_com_messages WHERE tid = {$this->tid}");
+		$this->datasource->executeUpdate("DELETE FROM rb_mess_messages WHERE tid = {$this->tid}");
 	}
 
 	private function deleteUsers() {
 		$this->users = [];
-		$this->datasource->executeUpdate("DELETE FROM rb_com_utenti_thread WHERE thread = {$this->tid}");
+		$this->datasource->executeUpdate("DELETE FROM rb_mess_utenti_thread WHERE thread = {$this->tid}");
 	}
 
 	public function getOtherUser($uid){
@@ -417,6 +430,9 @@ class Thread {
 			$rb = \RBUtilities::getInstance($this->datasource->getSource());
 			$id = 0;
 			foreach ($this->users as $u) {
+				if ($u instanceof UserBean) {
+					$u = $u->getUniqID();
+				}
 				if ($u != $uid) {
 					$id = $u;
 				}
@@ -441,18 +457,18 @@ class Thread {
 
 	public function updateLastAccess($uid) {
 		$this->lastAccesses[$uid] = date("Y-m-d H:i:s");
-		$this->datasource->executeUpdate("UPDATE rb_com_utenti_thread SET last_access = NOW() WHERE thread = ".$this->tid." AND utente = ".$uid);
+		$this->datasource->executeUpdate("UPDATE rb_mess_utenti_thread SET last_access = NOW() WHERE thread = ".$this->tid." AND utente = ".$uid);
 	}
 
 	public function deleteUser($uid) {
-		$this->datasource->executeUpdate("DELETE FROM rb_com_utenti_thread WHERE thread = {$this->tid} AND utente = {$uid}");
+		$this->datasource->executeUpdate("DELETE FROM rb_mess_utenti_thread WHERE thread = {$this->tid} AND utente = {$uid}");
 		unset($this->users[$uid]);
 	}
 
 	public function addUser($uid) {
 		$rb = \RBUtilities::getInstance($this->datasource->getSource());
 		$this->users[$uid] = $rb->loadUserFromUniqID($uid);
-		$this->datasource->executeUpdate("INSERT INTO rb_com_utenti_thread (thread, utente) VALUES ({$this->tid}, {$uid})");
+		$this->datasource->executeUpdate("INSERT INTO rb_mess_utenti_thread (thread, utente) VALUES ({$this->tid}, {$uid})");
 	}
 
 	public function addAdministrator($val) {
@@ -467,12 +483,12 @@ class Thread {
 			$this->admins[$uid] = $val;
 		}
 
-		$this->datasource->executeUpdate("UPDATE rb_com_utenti_thread SET admin = 1 WHERE utente = {$uid} AND thread = {$this->tid}");
+		$this->datasource->executeUpdate("UPDATE rb_mess_utenti_thread SET admin = 1 WHERE utente = {$uid} AND thread = {$this->tid}");
 	}
 
 	public function removeAdministrator($uid) {
 		unset($this->admins[$uid]);
-		$this->datasource->executeUpdate("UPDATE rb_com_utenti_thread SET admin = 0 WHERE utente = {$uid} AND thread = {$this->tid}");
+		$this->datasource->executeUpdate("UPDATE rb_mess_utenti_thread SET admin = 0 WHERE utente = {$uid} AND thread = {$this->tid}");
 	}
 
 	public function getAdmins() {
@@ -511,7 +527,7 @@ class Thread {
 	 */
 	public function setBlock($blocked) {
 		$this->blocked = $blocked;
-		$this->datasource->executeUpdate("UPDATE rb_com_threads SET blocked = {$blocked} WHERE tid = {$this->tid}");
+		$this->datasource->executeUpdate("UPDATE rb_mess_threads SET blocked = {$blocked} WHERE tid = {$this->tid}");
 	}
 
 	public function isBlocked() {
@@ -616,7 +632,7 @@ class Thread {
 	 */
 	public function setName($name) {
 		$this->name = $name;
-		$this->datasource->executeUpdate("UPDATE rb_com_threads SET name = '{$name}' WHERE tid = {$this->tid}");
+		$this->datasource->executeUpdate("UPDATE rb_mess_threads SET name = '{$name}' WHERE tid = {$this->tid}");
 	}
 
 	/**
@@ -631,7 +647,7 @@ class Thread {
 	 */
 	public function setType($type) {
 		$this->type = $type;
-		$this->datasource->executeUpdate("UPDATE rb_com_threads SET type = '{$type}' WHERE tid = {$this->tid}");
+		$this->datasource->executeUpdate("UPDATE rb_mess_threads SET type = '{$type}' WHERE tid = {$this->tid}");
 	}
 
 	/**
@@ -653,7 +669,7 @@ class Thread {
 	 */
 	public function activate($active) {
 		$this->active = $active;
-		$this->datasource->executeUpdate("UPDATE rb_com_threads SET active = {$active} WHERE tid = {$this->tid}");
+		$this->datasource->executeUpdate("UPDATE rb_mess_threads SET active = {$active} WHERE tid = {$this->tid}");
 	}
 
 	public function getPerms() {

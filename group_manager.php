@@ -30,7 +30,7 @@ switch ($action) {
 	case 'new':
 		$name = $db->real_escape_string($_REQUEST['nm']);
 		$now = date("Y-m-d H:i:s");
-		$thread = new Thread(0, new MySQLDataLoader($db), $now, $name, Thread::USER_GROUP, array($_SESSION['__user__']->getUniqID() => $_SESSION['__user__']));
+		$thread = new Thread(0, new MySQLDataLoader($db), $now, $name, Thread::USER_GROUP, array($_SESSION['__user__']->getUniqID()));
 		$thread->setOwner($_SESSION['__user__']);
 		$thread->save();
 		$thread->addAdministrator($_SESSION['__user__']->getUniqID());

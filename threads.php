@@ -6,6 +6,8 @@ require_once "../../lib/RBUtilities.php";
 
 check_session();
 
+ini_set('display_errors', 1);
+
 $drawer_label = "Conversazioni in corso";
 
 $user_type = $_SESSION['user_type'];
@@ -13,19 +15,19 @@ $uniqID = $_SESSION['__user__']->getUniqID();
 
 $uid = $_SESSION['__user__']->getUid();
 
-$sel_th = "SELECT rb_com_threads.* 
-		FROM rb_com_threads, rb_com_utenti_thread 
+$sel_th = "SELECT rb_mess_threads.* 
+		FROM rb_mess_threads, rb_mess_utenti_thread 
 		WHERE tid = thread 
 		AND utente = {$uniqID} 
 		ORDER BY last_message DESC";
 $res_th = $db->execute($sel_th);
 $rb = RBUtilities::getInstance($db);
+$threads = array();
 if ($res_th->num_rows > 0){
-	$threads = array();
+
 	while ($th = $res_th->fetch_assoc()){
 		if ($th['owner'] != "" && $th['owner'] != null) {
 			$owner = $rb->loadUserFromUniqID($th['owner']);
-			//$other_user = $u2;
 		}
 		else {
 			$owner = "";

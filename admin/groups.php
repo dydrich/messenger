@@ -23,22 +23,28 @@ try {
 	$ex->redirect();
 }
 $threads = array();
-while ($th = $res_th->fetch_assoc()){
-	$res_users = $db->executeQuery("SELECT utente FROM rb_com_utenti_thread WHERE thread = {$th['tid']}");
-	$users = array();
-	while ($row = $res_users->fetch_assoc()) {
-		$users[] = $row['utente'];
-	}
+if ($res_th && $res_th->num_rows > 0) {
+    while ($th = $res_th->fetch_assoc()) {
+        echo "th";
+        $res_users = $db->executeQuery("SELECT utente FROM rb_com_utenti_thread WHERE thread = {$th['tid']}");
+        $users = array();
+        if ($res_users && $res_users->num_rows > 0) {
+            while ($row = $res_users->fetch_assoc()) {
+                $users[] = $row['utente'];
+            }
+        }
 
-	$thread = new Thread($th['tid'], new MySQLDataLoader($db), $th['creation']);
-	if ($th['type'] != Thread::CONVERSATION) {
-		$thread->setName($th['name']);
-		$thread->setType($th['type']);
-	}
+        $thread = new Thread($th['tid'], new MySQLDataLoader($db), $th['creation']);
+        if ($th['type'] != Thread::CONVERSATION) {
+            $thread->setName($th['name']);
+            $thread->setType($th['type']);
+        }
 
-	$thread->setUsers($users);
-	$threads[$th['tid']] = $thread;
+        $thread->setUsers($users);
+        $threads[$th['tid']] = $thread;
+    }
 }
+
 $_SESSION['threads'] = $threads;
 $_SESSION['count_groups'] = count($threads);
 
